@@ -190,6 +190,30 @@ Si pasa localmente, debe pasar en el pipeline.
 > El pipeline de CI ejecuta los mismos pasos y rechazará el PR
 > automáticamente.
 
+### Versionamiento
+
+JAC Manager sigue **[Versionamiento Semántico](https://semver.org/)** (`MAYOR.MENOR.PARCHE`).
+
+| Tipo de cambio                        | Incremento | Ejemplo            |
+|---------------------------------------|------------|--------------------|
+| Corrección de error                   | Parche     | `0.1.0 → 0.1.1`    |
+| Nueva funcionalidad (compatible)      | Menor      | `0.1.0 → 0.2.0`    |
+| Cambio que rompe compatibilidad       | Mayor      | `0.1.0 → 1.0.0`    |
+
+**Siempre actualiza la versión antes de abrir un PR.** Usa el plugin
+Maven Versions para evitar ediciones manuales en el `pom.xml`:
+
+```bash
+./mvnw versions:set "-DnewVersion=0.2.0" "-DgenerateBackupPoms=false"
+```
+
+Luego haz el cambio de versión en un commit dedicado e independiente:
+
+```bash
+git add pom.xml
+git commit -m "chore: actualizar version a 0.2.0"
+```
+
 ---
 
 ## Checklist antes de abrir un Pull Request (frontend)
@@ -259,6 +283,36 @@ pnpm coverage      # 4. Pruebas completas con cobertura (equivalente al CI)
 > Si alguno de estos falla localmente, el PR será rechazado
 > automáticamente. No abrir el PR hasta que ambos pasen.
 
+### Versionamiento
+
+JAC Manager frontend sigue **[Versionamiento Semántico](https://semver.org/)** (`MAYOR.MENOR.PARCHE`).
+
+| Tipo de cambio                        | Incremento | Ejemplo            |
+|---------------------------------------|------------|--------------------|
+| Corrección de error                   | Parche     | `0.1.0 → 0.1.1`    |
+| Nueva funcionalidad (compatible)      | Menor      | `0.1.0 → 0.2.0`    |
+| Cambio que rompe compatibilidad       | Mayor      | `0.1.0 → 1.0.0`    |
+
+**Siempre actualiza la versión antes de abrir un PR.** Usa pnpm para
+actualizar la versión en el `package.json` sin crear tags de Git:
+
+```bash
+# Parche: 0.1.0 → 0.1.1
+pnpm version patch --no-git-tag-version
+
+# Menor: 0.1.0 → 0.2.0
+pnpm version minor --no-git-tag-version
+
+# Mayor: 0.1.0 → 1.0.0
+pnpm version major --no-git-tag-version
+```
+
+Luego haz el cambio de versión en un commit dedicado e independiente:
+
+```bash
+git add package.json
+git commit -m "chore: actualizar version a 0.2.0"
+```
 ---
 
 ## Revisión de Pull Requests
