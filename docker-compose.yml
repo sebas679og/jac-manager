@@ -31,7 +31,7 @@ services:
         postgres-datasource:
           condition: service_healthy
       environment:
-        JAC_MANAGER_API_DATASOURCE_URL: dbc:postgresql://postgres-datasource:5432/${JAC_MANAGER_API_DATASOURCE_DB}
+        JAC_MANAGER_API_DATASOURCE_URL: jdbc:postgresql://postgres-datasource:5432/${JAC_MANAGER_API_DATASOURCE_DB}
         JAC_MANAGER_API_DATASOURCE_USERNAME: ${JAC_MANAGER_API_DATASOURCE_USERNAME}
         JAC_MANAGER_API_DATASOURCE_PASSWORD: ${JAC_MANAGER_API_DATASOURCE_PASSWORD}
         JAC_MANAGER_API_JPA_DDL: ${JAC_MANAGER_API_JPA_DDL}
