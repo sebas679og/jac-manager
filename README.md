@@ -36,8 +36,8 @@ Proyecto académico — SENA Ficha 3466384
 ### Local
 - Java 25
 - Maven 3.9+
-- Node.js 20+ y pnpm
-- PostgreSQL 16+ corriendo localmente
+- Node.js 24+ y pnpm
+- PostgreSQL 18+ corriendo localmente o en Docker
 
 ---
 
@@ -48,25 +48,25 @@ Proyecto académico — SENA Ficha 3466384
 Clona el repositorio:
 
 ```bash
-git clone https://github.com/[organización]/jac-manager.git
+git clone https://github.com/sebas679og/jac-manager.git
 cd jac-manager
 ```
 
 Copia los archivos de variables de entorno:
 
 ```bash
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
+cp .env.template .env
+cp frontend/.env.template frontend/.env
 ```
 
 Levanta todos los servicios:
 
 ```bash
-docker-compose up --build
+docker-compose up --build -d
 ```
 
 Los servicios quedan disponibles en:
-- Frontend: http://localhost:5173
+- Frontend: http://localhost:3000
 - Backend API: http://localhost:8080
 - Base de datos: localhost:5432
 
@@ -82,13 +82,13 @@ docker-compose down
 
 #### Base de datos
 
-Crea una base de datos PostgreSQL llamada `jac_manager` y un usuario con
-permisos sobre ella. Configura las credenciales en `backend/.env`.
+Crea una base de datos PostgreSQL llamada `jac_manager_db` y un usuario con
+permisos sobre ella. Configura las credenciales en `.env`.
 
 #### Backend
 
 ```bash
-cp .env.example .env
+cp .env.template .env
 # Edita .env con tus credenciales locales
 cd backend
 ./mvnw spring-boot:run
@@ -100,7 +100,7 @@ La API queda disponible en http://localhost:8080
 
 ```bash
 cd frontend
-cp .env.example .env
+cp .env.template .env
 # Edita .env con la URL de la API: VITE_JAC_MANAGER_API_BASE_URL=http://localhost:8080
 pnpm install
 pnpm dev
