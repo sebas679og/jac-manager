@@ -1,0 +1,61 @@
+name: jac-manager
+
+services:
+    postgres-datasource:
+      image: postgres:18.3
+      environment:
+        POSTGRES_USER: ${JAC_MANAGER_API_DATASOURCE_USERNAME}
+        POSTGRES_PASSWORD: ${JAC_MANAGER_API_DATASOURCE_PASSWORD}
+        POSTGRES_DB: ${JAC_MANAGER_API_DATASOURCE_DB}
+      ports:
+        - "5432:5432"
+      volumes:
+        - jac-manager-data:/var/lib/postgresql
+      healthcheck:
+        test: [ "CMD-SHELL", "pg_isready -U ${JAC_MANAGER_API_DATASOURCE_USERNAME} -d ${JAC_MANAGER_API_DATASOURCE_DB}" ]
+        interval: 10s
+        timeout: 5s
+        retries: 5
+        start_period: 20s
+      restart: always
+      networks:
+        - jac-manager-network
+
+    jac-manager-api:
+      build:
+        context: ./backend
+        dockerfile: Dockerfile
+      ports:
+        - "8080:8080"
+      depends_on:
+        postgres-datasource:
+          condition: service_healthy
+      environment:
+        JAC_MANAGER_API_DATASOURCE_URL: dbc:postgresql://postgres-datasource:5432/${JAC_MANAGER_API_DATASOURCE_DB}
+        JAC_MANAGER_API_DATASOURCE_USERNAME: ${JAC_MANAGER_API_DATASOURCE_USERNAME}
+        JAC_MANAGER_API_DATASOURCE_PASSWORD: ${JAC_MANAGER_API_DATASOURCE_PASSWORD}
+        JAC_MANAGER_API_JPA_DDL: ${JAC_MANAGER_API_JPA_DDL}
+        JAC_MANAGER_API_JPA_SHOW_SQL: ${JAC_MANAGER_API_JPA_SHOW_SQL}
+      restart: on-failure
+      networks:
+        - jac-manager-network
+
+    jac-manager-frontend:
+      build:
+        context: ./frontend
+        dockerfile: Dockerfile
+      ports:
+        - "3000:3000"
+      depends_on:
+        jac-manager-api:
+          condition: service_started
+      restart: on-failure
+      networks:
+        - jac-manager-network
+
+networks:
+  jac-manager-network:
+    driver: bridge
+
+volumes:
+  jac-manager-data:
