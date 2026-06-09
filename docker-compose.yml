@@ -49,6 +49,8 @@ services:
       depends_on:
         jac-manager-api:
           condition: service_started
+      environment:
+        VITE_JAC_MANAGER_API_BASE_URL:  http://jac-manager-api:8080
       restart: on-failure
       networks:
         - jac-manager-network
