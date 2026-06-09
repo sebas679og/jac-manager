@@ -1,0 +1,34 @@
+name: Code Quality for Backend
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+
+  code-quality:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v5
+        with:
+          java-version: "25"
+          distribution: "temurin"
+          cache: maven
+
+      - name: Spotless — check format
+        run: mvn spotless:check
+
+      - name: Checkstyle — check style
+        run: mvn checkstyle:check
+
+      - name: PMD — check for code issues
+        run: mvn pmd:check
