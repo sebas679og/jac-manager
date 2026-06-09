@@ -1,10 +1,8 @@
 package com.api.jac;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class JacApplicationTests {
+class JacApplicationTests extends AbstractIntegrationTest {
 
   @Test
   void contextLoads() {}
