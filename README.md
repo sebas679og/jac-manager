@@ -88,9 +88,9 @@ permisos sobre ella. Configura las credenciales en `backend/.env`.
 #### Backend
 
 ```bash
-cd backend
 cp .env.example .env
 # Edita .env con tus credenciales locales
+cd backend
 ./mvnw spring-boot:run
 ```
 
@@ -101,32 +101,12 @@ La API queda disponible en http://localhost:8080
 ```bash
 cd frontend
 cp .env.example .env
-# Edita .env con la URL de la API: VITE_API_URL=http://localhost:8080
+# Edita .env con la URL de la API: VITE_JAC_MANAGER_API_BASE_URL=http://localhost:8080
 pnpm install
 pnpm dev
 ```
 
 El frontend queda disponible en http://localhost:5173
-
----
-
-## Variables de entorno
-
-### `backend/.env.example`
-
-```env
-DB_URL=jdbc:postgresql://localhost:5432/jac_manager
-DB_USER=postgres
-DB_PASSWORD=tu_contraseña
-JWT_SECRET=tu_clave_secreta
-JWT_EXPIRATION_MS=86400000
-```
-
-### `frontend/.env.example`
-
-```env
-VITE_API_URL=http://localhost:8080
-```
 
 ---
 

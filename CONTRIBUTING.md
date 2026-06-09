@@ -190,6 +190,77 @@ Si pasa localmente, debe pasar en el pipeline.
 > El pipeline de CI ejecuta los mismos pasos y rechazará el PR
 > automáticamente.
 
+---
+
+## Checklist antes de abrir un Pull Request (frontend)
+
+Antes de abrir un PR en el módulo `frontend/`, asegúrate de ejecutar
+los siguientes comandos en orden y de que todos pasen sin errores:
+
+### 1. Corregir problemas de estilo automáticamente
+
+```bash
+pnpm lint:fix
+```
+
+Corrige automáticamente los problemas de ESLint que tengan solución
+automática. Ejecuta este comando **antes** de los siguientes para
+evitar falsos errores en la verificación.
+
+### 2. Verificar reglas de linting
+
+```bash
+pnpm lint
+```
+
+Valida que el código cumple con las reglas de ESLint del proyecto.
+Si reporta errores que `lint:fix` no resolvió, corrígelos manualmente
+antes de continuar.
+
+### 3. Formatear el código
+
+```bash
+pnpm format
+```
+
+Aplica el formato de Prettier sobre todos los archivos en `src/`.
+Ejecuta esto antes de hacer el commit final.
+
+### 4. Ejecutar pruebas con cobertura
+
+```bash
+pnpm coverage
+```
+
+Ejecuta todas las pruebas y genera el reporte de cobertura. Este es
+el comando equivalente al que corre el pipeline de CI, úsalo para
+la verificación final antes de abrir el PR.
+
+Si quieres correr las pruebas rápidamente sin el reporte de cobertura:
+
+```bash
+pnpm test:run
+```
+
+---
+
+### Resumen del orden de ejecución
+
+```bash
+# Desde el directorio frontend/
+
+pnpm lint:fix      # 1. Corregir estilo automáticamente
+pnpm lint          # 2. Verificar que no quedan errores de linting
+pnpm format        # 3. Formatear código con Prettier
+pnpm coverage      # 4. Pruebas completas con cobertura (equivalente al CI)
+```
+
+> **Nota:** El pipeline de CI ejecuta `pnpm lint` y `pnpm coverage`.
+> Si alguno de estos falla localmente, el PR será rechazado
+> automáticamente. No abrir el PR hasta que ambos pasen.
+
+---
+
 ## Revisión de Pull Requests
 
 - Todo PR debe referenciar al menos un Issue con `Cierra #número`.
