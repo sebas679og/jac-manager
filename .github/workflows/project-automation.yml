@@ -1,0 +1,218 @@
+name: Project Board Automation
+
+on:
+  issues:
+    types: [assigned]
+  pull_request:
+    types: [opened, closed]
+    branches-ignore:
+      - main
+  push:
+    branches-ignore:
+      - main
+      - dev
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+
+jobs:
+  # ─── BACKLOG → IN ANALYSIS ───────────────────────────────────────────────────────
+  move-to-ready:
+    name: Move to in analysis on Assignment
+    if: github.event_name == 'issues' && github.event.action == 'assigned'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.PROJECT_TOKEN }}
+          script: |
+            const move = require('./.github/scripts/move-project-card.js');
+            const issueNodeId = context.payload.issue.node_id;
+            console.log(`Issue assigned: #${context.payload.issue.number}`);
+            await move(github, issueNodeId, 'En analisis');
+
+  # ─── READY → IN DEVELOPMENT ───────────────────────────────────────────────────
+  move-to-in-progress:
+    name: Move to In development on Branch Push
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.PROJECT_TOKEN }}
+          script: |
+            const move = require('./.github/scripts/move-project-card.js');
+            
+            const branchName = context.payload.ref.replace('refs/heads/', '');
+            const commitMessages = context.payload.commits.map(c => c.message).join('\n');
+            
+            const { data: openPRs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              head: `${context.repo.owner}:${branchName}`,
+            });
+            
+            if (openPRs.length > 0) {
+              console.log(`Branch "${branchName}" already has an open PR (#${openPRs[0].number}) → skipping move to In Progress.`);
+              return;
+            }
+            
+            const branchMatch = branchName.match(/(?:^|[\/\-_])(\d+)(?:[\/\-_]|$)/);
+            const commitMatches = [...commitMessages.matchAll(
+              /(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#(\d+)/gim
+            )];
+            const commitIssueNumbers = commitMatches.map(m => m[1]);
+            
+            const allIssues = new Set();
+            
+            if (branchMatch) {
+              allIssues.add(branchMatch[1]);
+            }
+            
+            commitIssueNumbers.forEach(num => {
+              if (num) allIssues.add(num);
+            });
+            
+            if (allIssues.size === 0) {
+              console.log('No issue number found in branch name or commits → skipping.');
+              return;
+            }
+            
+            console.log(`Issues detected: ${[...allIssues].join(', ')}`);
+            
+            for (const issueNumber of allIssues) {
+              const { data: issue } = await github.rest.issues.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: parseInt(issueNumber),
+              });
+            
+              if (issue.pull_request) {
+                console.log(`#${issueNumber} is a PR → skipping.`);
+                continue;
+              }
+            
+              console.log(`Moving issue #${issueNumber} to In development`);
+              await move(github, issue.node_id, 'En desarrollo');
+            }
+
+  # ─── IN PROGRESS → IN REVIEW ───────────────────────────────────────────────
+  move-to-in-review:
+    name: Move to In Review on PR Open
+    if: github.event_name == 'pull_request' && github.event.action == 'opened'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.PROJECT_TOKEN }}
+          script: |
+            const move = require('./.github/scripts/move-project-card.js');
+            const getLinkedIssues = require('./.github/scripts/get-linked-issues.js');
+            
+            const prNumber = context.payload.pull_request.number;
+            const prBody   = context.payload.pull_request.body  || '';
+            const prTitle  = context.payload.pull_request.title || '';
+            const combined = `${prTitle}\n${prBody}`;
+
+            const textMatches = [...combined.matchAll(
+              /(?:closes?|fixes?|resolves?|refs?)\s+#(\d+)|#(\d+)/gim
+            )];
+            
+            const textIssueNumbers = textMatches.map(m => m[1] || m[2]);
+
+            const linkedIssueNodeIds = await getLinkedIssues(github, context, prNumber);
+
+            const issueNodeIds = new Set(linkedIssueNodeIds);
+            
+            for (const issueNumber of textIssueNumbers) {
+              if (!issueNumber) continue;
+            
+              const { data: issue } = await github.rest.issues.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: parseInt(issueNumber),
+              });
+            
+              issueNodeIds.add(issue.node_id);
+            }
+
+            if (issueNodeIds.size === 0) {
+              console.log('No linked issues found — skipping.');
+              return;
+            }
+            
+            console.log(`Moving ${issueNodeIds.size} issue(s) to In review`);
+            
+            for (const nodeId of issueNodeIds) {
+              await move(github, nodeId, 'En revision / QA');
+            }
+
+  # ─── IN REVIEW → COMPLETE ──────────────────────────────────────────────────────
+  move-to-done:
+    name: Move to Complete on PR Merge
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.action == 'closed' &&
+      github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.PROJECT_TOKEN }}
+          script: |
+            const move = require('./.github/scripts/move-project-card.js');
+            const getLinkedIssues = require('./.github/scripts/get-linked-issues.js');
+            
+            const prNumber = context.payload.pull_request.number;
+            const prBody   = context.payload.pull_request.body  || '';
+            const prTitle  = context.payload.pull_request.title || '';
+            
+            const regex = /(?:closes?|fixes?|resolves?)\s+#(\d+)/gim;
+
+            const bodyMatches = [...prBody.matchAll(regex)].map(m => m[1]);
+
+            const titleMatches = [...prTitle.matchAll(regex)].map(m => m[1]);
+
+            const linkedIssueNodeIds = await getLinkedIssues(github, context, prNumber);
+
+            const issueNodeIds = new Set();
+
+            const allTextIssues = [...bodyMatches, ...titleMatches];
+            
+            for (const issueNumber of allTextIssues) {
+              if (!issueNumber) continue;
+            
+              const { data: issue } = await github.rest.issues.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: parseInt(issueNumber),
+              });
+            
+              issueNodeIds.add(issue.node_id);
+            }
+            
+            for (const nodeId of linkedIssueNodeIds) {
+              issueNodeIds.add(nodeId);
+            }
+            
+            if (issueNodeIds.size === 0) {
+              console.log('No linked issues found — skipping.');
+              return;
+            }
+            
+            console.log(`Moving ${issueNodeIds.size} unique issue(s) to complete`);
+
+            for (const nodeId of issueNodeIds) {
+              await move(github, nodeId, 'Completado');
+            }
