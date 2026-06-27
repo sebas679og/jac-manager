@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Version control
+.git/
+.gitignore
+
+# Editor & OS
+.vscode/
+.idea/
+*.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Testing
+coverage/
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Docs
+README.md
+CONTRIBUTING.md
